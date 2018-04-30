@@ -1,5 +1,3 @@
-// var exec = require('cordova/exec');
-
 var CONSTANTS = {
     /**
      * Result Codes
@@ -138,16 +136,7 @@ var CONSTANTS = {
 function Zebra () {
     this.version = null;
     var self = this;
-
-    this.events = {};
-    this.events['ZebraScannerAppeared'] = new Event('ZebraScannerAppeared');
-    this.events['ZebraScannerDisappeared'] = new Event('ZebraScannerDisappeared');
-    this.events['ZebraCommunicationSessionEstablished'] = new Event('ZebraCommunicationSessionEstablished');
-    this.events['ZebraCommunicationSessionTerminated'] = new Event('ZebraCommunicationSessionTerminated');
-    this.events['ZebraBarcodeData'] = new Event('ZebraBarcodeData');
-    this.events['ZebraImage'] = new Event('ZebraImage');
-    this.events['ZebraVideo'] = new Event('ZebraVideo');
-    this.events['ZebraFirmwareUpdate'] = new Event('ZebraFirmwareUpdate');
+    this._registerEventHandler();
 }
 
 /**
@@ -160,7 +149,7 @@ Zebra.prototype.getConstants = function() {
 
 /**
  *  @name getVersion
- *  @description : exposes the contants of the scanner so we can use them when calling configuration functions
+ *  @description : returns the version of the API used for development
 **/
 Zebra.prototype._getVersion = function(success, failure) {
     cordova.exec(success, failure, "ZebraScanner", "getVersion", []);
@@ -175,7 +164,7 @@ Zebra.prototype.getVersion = function() {
 
 /**
  *  @name setOperationalMode
- *  @description : exposes the contants of the scanner so we can use them when calling configuration functions
+ *  @description : sets the operational mode of the API
 **/
 Zebra.prototype._setOperationalMode = function(mode, success, failure) {
     cordova.exec(success, failure, "ZebraScanner", "setOperationalMode", [mode]);
@@ -263,65 +252,84 @@ Zebra.prototype.terminateCommunicationSession = function(scanner) {
     });
 }
 
-// self.events['ZebraScannerAppeared'] = new Event('ZebraScannerAppeared');
-// self.events['ZebraScannerDisappeared'] = new Event('ZebraScannerDisappeared');
-// self.events['ZebraCommunicationSessionEstablished'] = new Event('ZebraCommunicationSessionEstablished');
-// self.events['ZebraCommunicationSessionTerminated'] = new Event('ZebraCommunicationSessionTerminated');
-// self.events['ZebraBarcodeData'] = new Event('ZebraBarcodeData');
-// self.events['ZebraImage'] = new Event('ZebraImage');
-// self.events['ZebraVideo'] = new Event('ZebraVideo');
-// self.events['ZebraFirmwareUpdate'] = new Event('ZebraFirmwareUpdate');
+/**
+ *  @name _registerEventHandler
+ *  @description : Requests to scanner/disable "Available scanners detection" option.
+**/
+Zebra.prototype._registerEventHandler = function() {
+    cordova.exec(this._dispatch, {}, "ZebraScanner", "registerEventHandler");
+}
 
 // - (void) sbtEventScannerAppeared:(SbtScannerInfo*)availableScanner;
 Zebra.prototype.eventScannerAppeared = function(scanner) {
-    document.dispatchEvent(new CustomEvent('zebraScannerAppeared', { detail:
+    cordova.fireDocumentEvent('zebra.scannerAppeared', { detail:
         { scanner: scanner }
-    }));
+    });
 }
 
 // - (void) sbtEventScannerDisappeared:(int)scannerID;
 Zebra.prototype.ZebraScannerDisappeared = function(scannerID) {
-    document.dispatchEvent(new CustomEvent('zebraScannerDisappeared', { detail: { scannerID: scannerID }}));
+    cordova.fireDocumentEvent('zebra.scannerDisappeared', { detail: { scannerID: scannerID }});
 }
 
 // - (void) sbtEventCommunicationSessionEstablished:(SbtScannerInfo*)activeScanner;
 Zebra.prototype.ZebraCommunicationSessionEstablished = function(scannerID) {
-    document.dispatchEvent(new CustomEvent('zebraCommunicationSessionEstablished', { detail: { scannerID: scannerID }}));
+    cordova.fireDocumentEvent('zebra.communicationSessionEstablished', { detail: { scannerID: scannerID }});
 }
 
 // - (void) sbtEventCommunicationSessionTerminated:(int)scannerID;
 Zebra.prototype.ZebraCommunicationSessionTerminated = function(scannerID) {
-    document.dispatchEvent(new CustomEvent('zebraCommunicationSessionTerminated', { detail: { scannerID: scannerID }}));
+    cordova.fireDocumentEvent('zebra.communicationSessionTerminated', { detail: { scannerID: scannerID }});
 }
 
 // - (void) sbtEventBarcodeData:(NSData *)barcodeData barcodeType:(int)barcodeType fromScanner:(int)scannerID;
-Zebra.prototype.ZebraBarcodeData = function(scannerID) {
-    document.dispatchEvent(new CustomEvent('zebraBarcodeData', { detail: {
-        data: barcodeData,
-        type: barcodeType,
-        scanner: fromScanner
-    } }));
+Zebra.prototype.ZebraBarcodeData = function(data) {
+    cordova.fireDocumentEvent('zebra.barcodeData', { detail: {
+        barcodeData: data['barcodeData'],
+        barcodeType: data['barcodeType'],
+        scannerID: data['scannerID']
+    } });
 }
 
 // - (void) sbtEventImage:(NSData*)imageData fromScanner:(int)scannerID;
 Zebra.prototype.ZebraImage = function(scannerID) {
-    document.dispatchEvent(new CustomEvent('ZebraImage', { detail: {
+    cordova.fireDocumentEvent('Zebra.image', { detail: {
         data: imageData,
         scanner: fromScanner
-    } }));
+    } });
 }
 
 // - (void) sbtEventVideo:(NSData*)videoFrame fromScanner:(int)scannerID;
 Zebra.prototype.ZebraVideo = function(scannerID) {
-    document.dispatchEvent(new CustomEvent('ZebraVideo', { detail: {
+    cordova.fireDocumentEvent('Zebra.video', { detail: {
         data: videoFrame,
         scanner: fromScanner
-    } }));
+    } });
 }
 
 // - (void) sbtEventFirmwareUpdate:(FirmwareUpdateEvent*)event;
 Zebra.prototype.ZebraFirmwareUpdate = function(scannerID) {
-    document.dispatchEvent(new CustomEvent('ZebraFirmwareUpdate', { detail: {event: event} }));
+    cordova.fireDocumentEvent('Zebra.firmwareUpdate', { detail: {event: event} });
+}
+
+Zebra.prototype._dispatch = function(result) {
+    switch(result['eventType']) {
+        case 'sbtEventScannerAppeared':
+            Zebra.prototype.eventScannerAppeared(result);
+            break;
+        case 'sbtEventScannerDisappeared':
+            Zebra.prototype.ZebraScannerDisappeared(result);
+            break;
+        case 'sbtEventCommunicationSessionEstablished':
+            Zebra.prototype.ZebraCommunicationSessionEstablished(result);
+            break;
+        case 'sbtEventCommunicationSessionTerminated':
+            Zebra.prototype.ZebraCommunicationSessionTerminated(result);
+            break;
+        case 'sbtEventBarcodeData':
+            Zebra.prototype.ZebraBarcodeData(result);
+            break;
+    }
 }
 
 module.exports = new Zebra();

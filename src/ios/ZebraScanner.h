@@ -12,7 +12,10 @@
 @property NSMutableArray *availableScanners;
 // Allocate an array for storage of a list of active scanners
 @property NSMutableArray *activeScanners;
+// Allocate a string to contain the event callback id
+@property NSString *eventCallbackId;
 
+// Override the initialisation plugin from CDVPlugin
 - (void) pluginInitialize;
 
 // - (void) setDelegate:(CDVInvokedUrlCommand*)command;
