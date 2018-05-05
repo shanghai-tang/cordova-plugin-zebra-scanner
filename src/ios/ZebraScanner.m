@@ -1,4 +1,26 @@
-/* ZebraScanner.m */
+/* 
+The MIT License (MIT)
+
+Copyright (c) 2018 Blank Canvas Limited
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 
 #import "ZebraScanner.h"
 #import <Cordova/CDV.h>
@@ -162,6 +184,7 @@
         for (SbtScannerInfo *scannerObj in available) {
             NSMutableDictionary *scanner = [[NSMutableDictionary alloc] init];
             [scanner setObject:[NSNumber numberWithInt:[scannerObj getScannerID]] forKey:@"scannerID"];
+            [scanner setObject:[NSString stringWithFormat:@"%@",[scannerObj getScannerName]] forKey:@"name"];
             [scanner setObject:[NSNumber numberWithInt:[scannerObj getConnectionType]] forKey:@"connectionType"];
             [scanner setObject:[NSNumber numberWithInt:[scannerObj getAutoCommunicationSessionReestablishment]] forKey:@"autoCommunicationSessionReestablishment"];
             [scanner setObject:[NSNumber numberWithInt:[scannerObj isActive]] forKey:@"active"];
@@ -211,6 +234,7 @@
         for (SbtScannerInfo *scannerObj in active) {
             NSMutableDictionary *scanner = [[NSMutableDictionary alloc] init];
             [scanner setObject:[NSNumber numberWithInt:[scannerObj getScannerID]] forKey:@"scannerID"];
+            [scanner setObject:[NSString stringWithFormat:@"%@",[scannerObj getScannerName]] forKey:@"name"];
             [scanner setObject:[NSNumber numberWithInt:[scannerObj getConnectionType]] forKey:@"connectionType"];
             [scanner setObject:[NSNumber numberWithInt:[scannerObj getAutoCommunicationSessionReestablishment]] forKey:@"autoCommunicationSessionReestablishment"];
             [scanner setObject:[NSNumber numberWithInt:[scannerObj isActive]] forKey:@"active"];
@@ -285,6 +309,33 @@
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+/* enableAutomaticSessionReestablishment method
+ *
+ * Enable or disable scanner automatic reconnection.
+ *
+ * SETDEFAULT_YES : 0 = Set default yes.
+ * SETDEFAULT_NO :  1 = Set default no.
+ */
+- (void) enableAutomaticSessionReestablishment:(CDVInvokedUrlCommand*)command
+{
+    // Read the mode from the command arguments array and convert to a Boolean
+    CDVPluginResult* result = nil;
+    BOOL enable = [command.arguments objectAtIndex:0]!=0;
+    NSNumber *scanner = [command.arguments objectAtIndex:1];
+
+    SBT_RESULT status = [self.api sbtEnableAutomaticSessionReestablishment:enable forScanner:scanner];
+
+    // If the api call status returns with a zero, return success else return the error
+    if (status == 0) {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:status];
+    } else {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:status];
+    }
+
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+}
+
+
 /* registerEventHandler method
  *
  * Register the event handler method that will be used within javascript. The
@@ -319,6 +370,7 @@
     NSMutableDictionary *scanner = [[NSMutableDictionary alloc] init];
     [scanner setObject:@"sbtEventScannerAppeared" forKey:@"eventType"];
     [scanner setObject:[NSNumber numberWithInt:[availableScanner getScannerID]] forKey:@"scannerID"];
+    [scanner setObject:[NSString stringWithFormat:@"%@",[availableScanner getScannerName]] forKey:@"name"];
     [scanner setObject:[NSNumber numberWithInt:[availableScanner getConnectionType]] forKey:@"connectionType"];
     [scanner setObject:[NSNumber numberWithInt:[availableScanner getAutoCommunicationSessionReestablishment]] forKey:@"autoCommunicationSessionReestablishment"];
     [scanner setObject:[NSNumber numberWithInt:[availableScanner isActive]] forKey:@"active"];
@@ -327,7 +379,6 @@
     result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:scanner];
     [result setKeepCallbackAsBool:YES];
     [self.commandDelegate sendPluginResult:result callbackId:eventCallbackId];
-    // [CDVPluginResult writeJavascript:[NSString stringWithFormat:@"setTimeout( function() { cordova.fireDocumentEvent('%@_%@', {data:'%@'} ) }, 0);", ID, event, data]];
 }
 
 /* sbtEventScannerDisappeared method
@@ -373,6 +424,7 @@
     NSMutableDictionary *scanner = [[NSMutableDictionary alloc] init];
     [scanner setObject:@"sbtEventCommunicationSessionEstablished" forKey:@"eventType"];
     [scanner setObject:[NSNumber numberWithInt:[activeScanner getScannerID]] forKey:@"scannerID"];
+    [scanner setObject:[NSString stringWithFormat:@"%@",[activeScanner getScannerName]] forKey:@"name"];
     [scanner setObject:[NSNumber numberWithInt:[activeScanner getConnectionType]] forKey:@"connectionType"];
     [scanner setObject:[NSNumber numberWithInt:[activeScanner getAutoCommunicationSessionReestablishment]] forKey:@"autoCommunicationSessionReestablishment"];
     [scanner setObject:[NSNumber numberWithInt:[activeScanner isActive]] forKey:@"active"];
@@ -428,7 +480,6 @@
     result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:data];
     [result setKeepCallbackAsBool:YES];
     [self.commandDelegate sendPluginResult:result callbackId:eventCallbackId];
-    // [CDVPluginResult writeJavascript:[NSString stringWithFormat:@"setTimeout( function() { cordova.fireDocumentEvent('zebra.barcodeData', {data:'%@''} ) }, 0);", barcodeData]];
 }
 
 /* sbtEventImage method

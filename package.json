@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-zebra-scanner",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Driver to handle connections to Zebra Scanners. Supports CS4070, RFD8500, DS3678, LI3678",
   "cordova": {
     "id": "cordova-plugin-zebra-scanner",
