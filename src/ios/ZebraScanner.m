@@ -170,35 +170,38 @@ SOFTWARE.
  */
 - (void) getAvailableScanners:(CDVInvokedUrlCommand*)command
 {
-    CDVPluginResult* result = nil;
-
     NSMutableArray *available = [[NSMutableArray alloc] init];
     NSMutableArray *scanners = [[NSMutableArray alloc] init];
     SBT_RESULT status = [self.api sbtGetAvailableScannersList:&available];
     self.availableScanners = available;
 
-    // If the api call status returns with a zero, return success else return the error
-    if (status == 0) {
-        
-        // return an array of dictionaries with some of the parameters of SbtScannerInfo
-        for (SbtScannerInfo *scannerObj in available) {
-            NSMutableDictionary *scanner = [[NSMutableDictionary alloc] init];
-            [scanner setObject:[NSNumber numberWithInt:[scannerObj getScannerID]] forKey:@"scannerID"];
-            [scanner setObject:[NSString stringWithFormat:@"%@",[scannerObj getScannerName]] forKey:@"name"];
-            [scanner setObject:[NSNumber numberWithInt:[scannerObj getConnectionType]] forKey:@"connectionType"];
-            [scanner setObject:[NSNumber numberWithInt:[scannerObj getAutoCommunicationSessionReestablishment]] forKey:@"autoCommunicationSessionReestablishment"];
-            [scanner setObject:[NSNumber numberWithInt:[scannerObj isActive]] forKey:@"active"];
-            [scanner setObject:[NSNumber numberWithInt:[scannerObj isAvailable]] forKey:@"available"];
-            [scanner setObject:[NSNumber numberWithInt:[scannerObj getScannerModel]] forKey:@"model"];
-            [scanners addObject:scanner];
+    // Run in a background thread
+    [self.commandDelegate runInBackground:^{
+        CDVPluginResult* result = nil;
+
+        // If the api call status returns with a zero, return success else return the error
+        if (status == 0) {
+            
+            // return an array of dictionaries with some of the parameters of SbtScannerInfo
+            for (SbtScannerInfo *scannerObj in available) {
+                NSMutableDictionary *scanner = [[NSMutableDictionary alloc] init];
+                [scanner setObject:[NSNumber numberWithInt:[scannerObj getScannerID]] forKey:@"scannerID"];
+                [scanner setObject:[NSString stringWithFormat:@"%@",[scannerObj getScannerName]] forKey:@"name"];
+                [scanner setObject:[NSNumber numberWithInt:[scannerObj getConnectionType]] forKey:@"connectionType"];
+                [scanner setObject:[NSNumber numberWithInt:[scannerObj getAutoCommunicationSessionReestablishment]] forKey:@"autoCommunicationSessionReestablishment"];
+                [scanner setObject:[NSNumber numberWithInt:[scannerObj isActive]] forKey:@"active"];
+                [scanner setObject:[NSNumber numberWithInt:[scannerObj isAvailable]] forKey:@"available"];
+                [scanner setObject:[NSNumber numberWithInt:[scannerObj getScannerModel]] forKey:@"model"];
+                [scanners addObject:scanner];
+            }
+            
+            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:scanners];
+        } else {
+            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:status];
         }
-        
-        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:scanners];
-    } else {
-        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:status];
-    }
-    
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    }];
 }
 
 /* getActiveScanners method
@@ -220,35 +223,38 @@ SOFTWARE.
  */
 - (void) getActiveScanners:(CDVInvokedUrlCommand*)command
 {
-    CDVPluginResult* result = nil;
-
     NSMutableArray *active = [[NSMutableArray alloc] init];
     NSMutableArray *scanners = [[NSMutableArray alloc] init];
     SBT_RESULT status = [self.api sbtGetActiveScannersList:&active];
     self.activeScanners = active;
 
-    // If the api call status returns with a zero, return success else return the error
-    if (status == 0) {
+    // Run in a background thread
+    [self.commandDelegate runInBackground:^{
+        CDVPluginResult* result = nil;
 
-        // return an array of dictionaries with some of the parameters of SbtScannerInfo
-        for (SbtScannerInfo *scannerObj in active) {
-            NSMutableDictionary *scanner = [[NSMutableDictionary alloc] init];
-            [scanner setObject:[NSNumber numberWithInt:[scannerObj getScannerID]] forKey:@"scannerID"];
-            [scanner setObject:[NSString stringWithFormat:@"%@",[scannerObj getScannerName]] forKey:@"name"];
-            [scanner setObject:[NSNumber numberWithInt:[scannerObj getConnectionType]] forKey:@"connectionType"];
-            [scanner setObject:[NSNumber numberWithInt:[scannerObj getAutoCommunicationSessionReestablishment]] forKey:@"autoCommunicationSessionReestablishment"];
-            [scanner setObject:[NSNumber numberWithInt:[scannerObj isActive]] forKey:@"active"];
-            [scanner setObject:[NSNumber numberWithInt:[scannerObj isAvailable]] forKey:@"available"];
-            [scanner setObject:[NSNumber numberWithInt:[scannerObj getScannerModel]] forKey:@"model"];
-            [scanners addObject:scanner];
+        // If the api call status returns with a zero, return success else return the error
+        if (status == 0) {
+
+            // return an array of dictionaries with some of the parameters of SbtScannerInfo
+            for (SbtScannerInfo *scannerObj in active) {
+                NSMutableDictionary *scanner = [[NSMutableDictionary alloc] init];
+                [scanner setObject:[NSNumber numberWithInt:[scannerObj getScannerID]] forKey:@"scannerID"];
+                [scanner setObject:[NSString stringWithFormat:@"%@",[scannerObj getScannerName]] forKey:@"name"];
+                [scanner setObject:[NSNumber numberWithInt:[scannerObj getConnectionType]] forKey:@"connectionType"];
+                [scanner setObject:[NSNumber numberWithInt:[scannerObj getAutoCommunicationSessionReestablishment]] forKey:@"autoCommunicationSessionReestablishment"];
+                [scanner setObject:[NSNumber numberWithInt:[scannerObj isActive]] forKey:@"active"];
+                [scanner setObject:[NSNumber numberWithInt:[scannerObj isAvailable]] forKey:@"available"];
+                [scanner setObject:[NSNumber numberWithInt:[scannerObj getScannerModel]] forKey:@"model"];
+                [scanners addObject:scanner];
+            }
+
+            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:scanners];
+        } else {
+            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:status];
         }
 
-        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:scanners];
-    } else {
-        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:status];
-    }
-
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    }];
 }
 
 /* establishCommunicationSession method
@@ -260,24 +266,28 @@ SOFTWARE.
 - (void) establishCommunicationSession:(CDVInvokedUrlCommand*)command
 {
     // Read the scanner id from the command arguments array
-    CDVPluginResult* pluginResult = nil;
     NSNumber *scanner = [command.arguments objectAtIndex:0];
 
-    // If no value has been passed in, return an error else create the CDVPluginResult Object
-    if (scanner == nil) {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
-    } else {
-        SBT_RESULT result = [self.api sbtEstablishCommunicationSession:scanner.intValue];
+    // Run in a background thread
+    [self.commandDelegate runInBackground:^{
+        CDVPluginResult* pluginResult = nil;
 
-        // If the api call status returns with a zero, return success else return the error
-        if (result == 0) {
-            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:result];
+        // If no value has been passed in, return an error else create the CDVPluginResult Object
+        if (scanner == nil) {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
         } else {
-            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:result];
-        }
-    }
+            SBT_RESULT result = [self.api sbtEstablishCommunicationSession:scanner.intValue];
 
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            // If the api call status returns with a zero, return success else return the error
+            if (result == 0) {
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:result];
+            } else {
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:result];
+            }
+        }
+
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }];
 }
 
 /* terminateCommunicationSession method
@@ -321,9 +331,10 @@ SOFTWARE.
     // Read the mode from the command arguments array and convert to a Boolean
     CDVPluginResult* result = nil;
     BOOL enable = [command.arguments objectAtIndex:0]!=0;
-    NSNumber *scanner = [command.arguments objectAtIndex:1];
+    NSNumber *scanner_p = [command.arguments objectAtIndex:1];
+    int scanner = scanner_p.intValue;
 
-    SBT_RESULT status = [self.api sbtEnableAutomaticSessionReestablishment:enable forScanner:scanner];
+    SBT_RESULT status = [self.api sbtEnableAutomaticSessionReestablishment:enable forScanner: scanner];
 
     // If the api call status returns with a zero, return success else return the error
     if (status == 0) {
