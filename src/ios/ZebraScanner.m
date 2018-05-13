@@ -62,7 +62,7 @@ SOFTWARE.
 
     // Set the operation mode and enable all events
     // TODO: Need to read the operation mode from a property defined on initialization
-    [self.api sbtSetOperationalMode:SBT_OPMODE_ALL];
+    // [self.api sbtSetOperationalMode:self.mode];
     [self.api sbtSubsribeForEvents:notifications_mask];
 
     // Store the list of available scanners
@@ -83,14 +83,17 @@ SOFTWARE.
  */
 - (void) getVersion:(CDVInvokedUrlCommand*)command
 {
-    CDVPluginResult* result = nil;
+    // Run in a background thread
+    [self.commandDelegate runInBackground:^{
+        CDVPluginResult* result = nil;
 
-    // Get the SDK version string
-    NSString *version = [self.api sbtGetVersion];
+        // Get the SDK version string
+        NSString *version = [self.api sbtGetVersion];
 
-    // Return the result to the calling js method
-    result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:version];
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        // Return the result to the calling js method
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:version];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    }];
 }
 
 /* setOperationalMode method
@@ -105,24 +108,28 @@ SOFTWARE.
 - (void) setOperationalMode:(CDVInvokedUrlCommand*)command
 {
     // Read the mode from the command arguments array
-    CDVPluginResult* result = nil;
     NSNumber *mode = [command.arguments objectAtIndex:0];
 
-    // If no value has been passed in, return an error else create the CDVPluginResult Object
-    if (mode == nil) {
-        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
-    } else {
-        SBT_RESULT status = [self.api sbtSetOperationalMode:mode.intValue];
+    // Run in a background thread
+    [self.commandDelegate runInBackground:^{
+        CDVPluginResult* result = nil;
 
-        // If the api call status returns with a zero, return success else return the error
-        if (status == 0) {
-            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:status];
+        // If no value has been passed in, return an error else create the CDVPluginResult Object
+        if (mode == nil) {
+            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
         } else {
-            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:status];
-        }
-    }
+            SBT_RESULT status = [self.api sbtSetOperationalMode:mode.intValue];
 
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+            // If the api call status returns with a zero, return success else return the error
+            if (status == 0) {
+                result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:status];
+            } else {
+                result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:status];
+            }
+        }
+
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    }];
 }
 
 /* enableAvailableScannersDetection method
@@ -136,19 +143,23 @@ SOFTWARE.
 - (void) enableAvailableScannersDetection:(CDVInvokedUrlCommand*)command
 {
     // Read the mode from the command arguments array and convert to a Boolean
-    CDVPluginResult* result = nil;
     BOOL enable = [command.arguments objectAtIndex:0]!=0;
 
-    SBT_RESULT status = [self.api sbtEnableAvailableScannersDetection:enable];
+    // Run in a background thread
+    [self.commandDelegate runInBackground:^{
+        CDVPluginResult* result = nil;
 
-    // If the api call status returns with a zero, return success else return the error
-    if (status == 0) {
-        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:status];
-    } else {
-        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:status];
-    }
+        SBT_RESULT status = [self.api sbtEnableAvailableScannersDetection:enable];
 
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        // If the api call status returns with a zero, return success else return the error
+        if (status == 0) {
+            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:status];
+        } else {
+            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:status];
+        }
+
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    }];
 }
 
 /* getAvailableScanners method
@@ -170,14 +181,14 @@ SOFTWARE.
  */
 - (void) getAvailableScanners:(CDVInvokedUrlCommand*)command
 {
-    NSMutableArray *available = [[NSMutableArray alloc] init];
-    NSMutableArray *scanners = [[NSMutableArray alloc] init];
-    SBT_RESULT status = [self.api sbtGetAvailableScannersList:&available];
-    self.availableScanners = available;
-
     // Run in a background thread
     [self.commandDelegate runInBackground:^{
         CDVPluginResult* result = nil;
+        NSMutableArray *available = [[NSMutableArray alloc] init];
+        NSMutableArray *scanners = [[NSMutableArray alloc] init];
+
+        SBT_RESULT status = [self.api sbtGetAvailableScannersList:&available];
+        self.availableScanners = available;
 
         // If the api call status returns with a zero, return success else return the error
         if (status == 0) {
@@ -223,14 +234,14 @@ SOFTWARE.
  */
 - (void) getActiveScanners:(CDVInvokedUrlCommand*)command
 {
-    NSMutableArray *active = [[NSMutableArray alloc] init];
-    NSMutableArray *scanners = [[NSMutableArray alloc] init];
-    SBT_RESULT status = [self.api sbtGetActiveScannersList:&active];
-    self.activeScanners = active;
-
     // Run in a background thread
     [self.commandDelegate runInBackground:^{
         CDVPluginResult* result = nil;
+        NSMutableArray *active = [[NSMutableArray alloc] init];
+        NSMutableArray *scanners = [[NSMutableArray alloc] init];
+
+        SBT_RESULT status = [self.api sbtGetActiveScannersList:&active];
+        self.activeScanners = active;
 
         // If the api call status returns with a zero, return success else return the error
         if (status == 0) {
@@ -299,24 +310,28 @@ SOFTWARE.
 - (void) terminateCommunicationSession:(CDVInvokedUrlCommand*)command
 {
     // Read the scanner id from the command arguments array
-    CDVPluginResult* pluginResult = nil;
     NSNumber *scanner = [command.arguments objectAtIndex:0];
 
-    // If no value has been passed in, return an error else create the CDVPluginResult Object
-    if (scanner == nil) {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
-    } else {
-        SBT_RESULT result = [self.api sbtTerminateCommunicationSession:scanner.intValue];
-        
-        // If the api call status returns with a zero, return success else return the error
-        if (result == 0) {
-            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:result];
+    // Run in a background thread
+    [self.commandDelegate runInBackground:^{
+        CDVPluginResult* pluginResult = nil;
+
+        // If no value has been passed in, return an error else create the CDVPluginResult Object
+        if (scanner == nil) {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
         } else {
-            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:result];
+            SBT_RESULT result = [self.api sbtTerminateCommunicationSession:scanner.intValue];
+            
+            // If the api call status returns with a zero, return success else return the error
+            if (result == 0) {
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:result];
+            } else {
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:result];
+            }
         }
-    }
-    
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }];
 }
 
 /* enableAutomaticSessionReestablishment method
@@ -329,21 +344,24 @@ SOFTWARE.
 - (void) enableAutomaticSessionReestablishment:(CDVInvokedUrlCommand*)command
 {
     // Read the mode from the command arguments array and convert to a Boolean
-    CDVPluginResult* result = nil;
     BOOL enable = [command.arguments objectAtIndex:0]!=0;
     NSNumber *scanner_p = [command.arguments objectAtIndex:1];
     int scanner = scanner_p.intValue;
 
-    SBT_RESULT status = [self.api sbtEnableAutomaticSessionReestablishment:enable forScanner: scanner];
+    // Run in a background thread
+    [self.commandDelegate runInBackground:^{
+        CDVPluginResult* result = nil;
+        SBT_RESULT status = [self.api sbtEnableAutomaticSessionReestablishment:enable forScanner: scanner];
 
-    // If the api call status returns with a zero, return success else return the error
-    if (status == 0) {
-        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:status];
-    } else {
-        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:status];
-    }
+        // If the api call status returns with a zero, return success else return the error
+        if (status == 0) {
+            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:status];
+        } else {
+            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:status];
+        }
 
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    }];
 }
 
 

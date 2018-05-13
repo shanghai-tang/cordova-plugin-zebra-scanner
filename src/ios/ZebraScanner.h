@@ -30,6 +30,8 @@ SOFTWARE.
 
 // Reference to the initialised instance
 @property id <ISbtSdkApi> api;
+// The operation mode to run in on initialisation
+@property int mode;
 // Allocate an array for storage of a list of available scanners
 @property NSMutableArray *availableScanners;
 // Allocate an array for storage of a list of active scanners
